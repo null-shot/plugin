@@ -69,7 +69,14 @@ test("OpenCode adapter supports the managed global install layout", () => {
 
 test("README exposes one pasteable bootstrap command per client", () => {
   const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
-  for (const client of ["Codex terminal", "Claude Code terminal", "Cursor chat", "Kimi chat", "Gemini terminal", "OpenCode terminal", "Pi terminal"]) {
+  /*
+    Cursor is deliberately absent from this list. It has no documented command
+    for installing a plugin from a repository — Cursor's own docs describe a
+    dashboard flow — so its row names the repo to paste into that flow instead
+    of a command, and the one-inline-command shape does not apply. Every client
+    that HAS a command is still held to one paste.
+  */
+  for (const client of ["Codex terminal", "Claude Code terminal", "Kimi chat", "Gemini terminal", "OpenCode terminal", "Pi terminal"]) {
     const row = readme.split("\n").find((line) => line.startsWith(`| ${client} |`));
     assert.ok(row, `missing bootstrap row for ${client}`);
     assert.equal((row.match(/`/g) ?? []).length, 2, `${client} bootstrap must be one inline command`);
@@ -79,6 +86,31 @@ test("README exposes one pasteable bootstrap command per client", () => {
   assert.match(readme, /mcp-config login plugin-nullshot:nullshot/);
   assert.match(readme, /“create a todo app” creates a prompt-free Jam/);
   assert.match(readme, /Spek visualization stays current/);
+});
+
+test("Cursor is not given a command it does not have", () => {
+  /*
+    The row used `/add-plugin <url>`, which Cursor has no such command for, and
+    the prose claimed Cursor discovers OAuth from a 401 — but
+    `.cursor-plugin/plugin.json` declares skills only and no mcpServers, so
+    there is no server to return one. Installing the plugin leaves a Cursor user
+    with skills and no gateway, which is the least obvious way to be broken.
+  */
+  const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
+  assert.ok(!readme.includes("/add-plugin"), "Cursor has no `/add-plugin` command");
+
+  const row = readme.split("\n").find((line) => line.startsWith("| Cursor"));
+  assert.ok(row, "missing Cursor row");
+  assert.match(row, /null-shot\/plugin/);
+
+  // If the manifest ever gains an MCP server, this test should be revisited —
+  // until then the README must not imply Cursor is connected by installing.
+  const cursorManifest = JSON.parse(
+    fs.readFileSync(path.resolve(".cursor-plugin/plugin.json"), "utf8"),
+  );
+  if (cursorManifest.mcpServers === undefined) {
+    assert.match(readme, /declares skills\s*\n?\s*only, no `mcpServers`/);
+  }
 });
 
 test("bootstrap commands are commands the clients actually have", () => {

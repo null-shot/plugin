@@ -10,7 +10,7 @@ Paste the command for your client as one line. Clients with terminal OAuth suppo
 | --- | --- |
 | Codex terminal | `codex mcp add nullshot --url "${NULLSHOT_MCP_URL:-https://mcp.nullshot.ai/mcp}" && codex mcp login nullshot` |
 | Claude Code terminal | `claude plugin marketplace add null-shot/plugin && claude plugin install nullshot@nullshot && claude mcp login plugin:nullshot:nullshot` |
-| Cursor chat | `/add-plugin https://github.com/null-shot/plugin` |
+| Cursor | `null-shot/plugin` into Dashboard → Plugins → Add Marketplace → Import from Repo |
 | Kimi chat | `/plugins install https://github.com/null-shot/plugin` |
 | Gemini terminal | `gemini extensions install https://github.com/null-shot/plugin --consent` |
 | OpenCode terminal | `curl -fsSL https://raw.githubusercontent.com/null-shot/plugin/main/scripts/install-opencode.sh \| sh` |
@@ -22,7 +22,16 @@ Codex has no documented terminal command for adding a marketplace, so there is
 nothing to paste for that half — the two `codex plugin` commands this table used
 to list are not commands Codex has.
 
-Cursor and Gemini discover OAuth automatically when the MCP server first returns `401 Unauthorized`. Kimi applies the plugin in a new session; if it reports that authorization is required, run `/mcp-config login plugin-nullshot:nullshot`. Pi exposes the equivalent interactive action as `/mcp-auth nullshot`.
+Gemini discovers OAuth automatically when the MCP server first returns
+`401 Unauthorized`.
+
+Cursor is the one client this plugin does not fully bootstrap. It has no
+documented command for installing a plugin from a repository — installation is
+the dashboard flow above — and `.cursor-plugin/plugin.json` declares skills
+only, no `mcpServers`, so installing it gives Cursor the planning skills and no
+gateway connection. Add the gateway separately as an HTTP MCP server in Cursor's
+`mcp.json`, or use the one-click Cursor button in Nullshot's own Connect panel,
+which writes the environment-correct URL for you. Kimi applies the plugin in a new session; if it reports that authorization is required, run `/mcp-config login plugin-nullshot:nullshot`. Pi exposes the equivalent interactive action as `/mcp-auth nullshot`.
 
 ## Choosing an environment
 

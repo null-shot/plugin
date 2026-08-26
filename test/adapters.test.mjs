@@ -81,6 +81,41 @@ test("README exposes one pasteable bootstrap command per client", () => {
   assert.match(readme, /Spek visualization stays current/);
 });
 
+test("bootstrap commands are commands the clients actually have", () => {
+  /*
+    This repo has shipped an invented Codex command before: the table used
+    `codex mcp add --transport http`, which is Claude Code's flag and which
+    Codex errors on. It then shipped `codex plugin marketplace add` and
+    `codex plugin add`, neither of which Codex documents — plugin management
+    there is the interactive `/plugins` browser. A pasted command that cannot
+    work is worse than no row at all, because the user blames their setup.
+
+    `codex mcp add --url` and `codex mcp login` ARE documented, so those are
+    what the row uses.
+  */
+  const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
+  const codex = readme.split("\n").find((line) => line.startsWith("| Codex terminal |"));
+  assert.ok(codex, "missing Codex bootstrap row");
+
+  assert.match(codex, /codex mcp add nullshot --url/);
+  assert.match(codex, /codex mcp login nullshot/);
+  // `--transport` is Claude Code's flag; Codex rejects it.
+  assert.ok(!codex.includes("--transport"), "Codex has no --transport flag");
+  // Undocumented plugin subcommands.
+  for (const invented of ["codex plugin marketplace", "codex plugin add"]) {
+    assert.ok(!codex.includes(invented), `Codex has no \`${invented}\` command`);
+  }
+
+  // Claude Code's are verified against its own CLI and docs: `plugin
+  // marketplace add` takes a GitHub repo, `plugin install` takes
+  // plugin@marketplace, and a plugin-provided server is scoped
+  // plugin:<plugin>:<server>.
+  const claude = readme.split("\n").find((line) => line.startsWith("| Claude Code terminal |"));
+  assert.match(claude, /claude plugin marketplace add null-shot\/plugin/);
+  assert.match(claude, /claude plugin install nullshot@nullshot/);
+  assert.match(claude, /claude mcp login plugin:nullshot:nullshot/);
+});
+
 test("skills drive Spek tasks through atomic claims, not todo writes", () => {
   // The previous guidance told agents to mark task state with `update_jam_todo`,
   // which the gateway forbids: it bypasses claim ownership, and two clients on

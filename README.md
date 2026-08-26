@@ -8,13 +8,19 @@ Paste the command for your client as one line. Clients with terminal OAuth suppo
 
 | Client | Paste once |
 | --- | --- |
-| Codex terminal | `codex plugin marketplace add null-shot/plugin && codex plugin add nullshot@nullshot && codex mcp login nullshot` |
+| Codex terminal | `codex mcp add nullshot --url "${NULLSHOT_MCP_URL:-https://mcp.nullshot.ai/mcp}" && codex mcp login nullshot` |
 | Claude Code terminal | `claude plugin marketplace add null-shot/plugin && claude plugin install nullshot@nullshot && claude mcp login plugin:nullshot:nullshot` |
 | Cursor chat | `/add-plugin https://github.com/null-shot/plugin` |
 | Kimi chat | `/plugins install https://github.com/null-shot/plugin` |
 | Gemini terminal | `gemini extensions install https://github.com/null-shot/plugin --consent` |
 | OpenCode terminal | `curl -fsSL https://raw.githubusercontent.com/null-shot/plugin/main/scripts/install-opencode.sh \| sh` |
 | Pi terminal | `pi install git:github.com/null-shot/plugin@v0.2.0` |
+
+Codex's bootstrap registers the MCP server and signs in; its plugin bundle,
+which carries the skills, is installed from the `/plugins` browser inside Codex.
+Codex has no documented terminal command for adding a marketplace, so there is
+nothing to paste for that half — the two `codex plugin` commands this table used
+to list are not commands Codex has.
 
 Cursor and Gemini discover OAuth automatically when the MCP server first returns `401 Unauthorized`. Kimi applies the plugin in a new session; if it reports that authorization is required, run `/mcp-config login plugin-nullshot:nullshot`. Pi exposes the equivalent interactive action as `/mcp-auth nullshot`.
 
@@ -38,12 +44,16 @@ Claude Code reads it through its plugin manifest, where `${VAR:-default}`
 expansion is supported for an HTTP server's `url`. The OpenCode and Pi adapters
 resolve it in code.
 
-Codex, Cursor, Kimi and Gemini are **production-only**. Codex reads
-`plugins/nullshot/.mcp.json` and does not expand `${VAR}` in MCP configuration
-(`openai/codex#2680` and `#7521` are open requests for it), so that file stays a
-plain URL on purpose: an unexpanded `${...}` there would register a broken
-server, which is worse than one that cannot change environment. The Cursor,
-Kimi and Gemini manifests have no expansion support I could verify either.
+Codex reads the variable too, but through the shell rather than through Codex:
+its bootstrap passes the URL as a command-line argument, so `${NULLSHOT_MCP_URL:-...}`
+is expanded before Codex ever sees it. Codex itself does not expand `${VAR}` in
+MCP configuration (`openai/codex#2680` and `#7521` are open requests for it),
+which is why `plugins/nullshot/.mcp.json` stays a plain URL — an unexpanded
+`${...}` written into a config file would register a broken server, which is
+worse than one that cannot change environment.
+
+Cursor, Kimi and Gemini are **production-only**. Their manifests are static and
+have no expansion support I could verify.
 
 ## Workflow
 

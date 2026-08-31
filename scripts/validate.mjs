@@ -60,6 +60,30 @@ assert.equal(
   "Claude marketplace version drifted from package.json",
 );
 
+/*
+  Cursor's manifest must declare the gateway, not just the skills.
+  It shipped with `skills` alone, so a Cursor user who completed the dashboard
+  install got skills naming tools their editor had no server to call — nothing
+  errored, which is why it survived. The shape is the one Cursor's own
+  first-party remote-MCP plugins use: transport inferred from `url`.
+*/
+const cursor = JSON.parse(fs.readFileSync(path.join(root, ".cursor-plugin/plugin.json"), "utf8"));
+assert.equal(cursor.mcpServers?.nullshot?.type, "http", "Cursor manifest must declare an http MCP server");
+assert.equal(cursor.mcpServers?.nullshot?.url, canonicalUrl);
+assert.equal(cursor.skills, "./plugins/nullshot/skills/");
+assert.equal(cursor.commands, "./plugins/nullshot/commands/");
+/*
+  And it must stay literal. Cursor's manifest `variables` are values the user is
+  prompted for with no default, so an unset one registers a literally
+  unexpanded `${...}` as the URL — a broken server, worse than a fixed one. The
+  environment-correct path for Cursor is the one-click button in Nullshot's
+  Connect panel, which writes the URL directly.
+*/
+assert.ok(
+  !JSON.stringify(cursor.mcpServers).includes("${"),
+  "Cursor has no verified default-expansion — its server URL must stay literal",
+);
+
 const canonicalMcp = fs.readFileSync(path.join(root, "plugins/nullshot/.mcp.json"), "utf8");
 assert.ok(canonicalMcp.includes(canonicalUrl));
 // Only where expansion is verified. Claude Code documents `${VAR:-default}` in

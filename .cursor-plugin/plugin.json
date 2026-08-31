@@ -13,5 +13,12 @@
     "planning",
     "skills"
   ],
-  "skills": "./plugins/nullshot/skills/"
+  "skills": "./plugins/nullshot/skills/",
+  "commands": "./plugins/nullshot/commands/",
+  "mcpServers": {
+    "nullshot": {
+      "type": "http",
+      "url": "https://mcp.nullshot.ai/mcp"
+    }
+  }
 }

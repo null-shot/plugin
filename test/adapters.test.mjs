@@ -90,11 +90,9 @@ test("README exposes one pasteable bootstrap command per client", () => {
 
 test("Cursor is not given a command it does not have", () => {
   /*
-    The row used `/add-plugin <url>`, which Cursor has no such command for, and
-    the prose claimed Cursor discovers OAuth from a 401 — but
-    `.cursor-plugin/plugin.json` declares skills only and no mcpServers, so
-    there is no server to return one. Installing the plugin leaves a Cursor user
-    with skills and no gateway, which is the least obvious way to be broken.
+    The row used `/add-plugin <url>`, which Cursor has no such command for.
+    Installation is a dashboard flow, so the row names the repo to paste into
+    it rather than a command that cannot work.
   */
   const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
   assert.ok(!readme.includes("/add-plugin"), "Cursor has no `/add-plugin` command");
@@ -102,15 +100,50 @@ test("Cursor is not given a command it does not have", () => {
   const row = readme.split("\n").find((line) => line.startsWith("| Cursor"));
   assert.ok(row, "missing Cursor row");
   assert.match(row, /null-shot\/plugin/);
+});
 
-  // If the manifest ever gains an MCP server, this test should be revisited —
-  // until then the README must not imply Cursor is connected by installing.
-  const cursorManifest = JSON.parse(
+test("installing into Cursor connects Cursor", () => {
+  /*
+    The second half of the same bug. `.cursor-plugin/plugin.json` declared
+    `skills` and nothing else, so a user who completed the dashboard flow got
+    skills that name tools their editor had no server to call. Nothing errors in
+    that state — the plugin is installed, the skills load, and the tools simply
+    are not there — which is why it survived a release.
+
+    `mcpServers` is a documented Cursor manifest field (a path, an inline
+    object, or an array), and the inline object below is the shape Cursor's own
+    first-party remote-MCP plugins use: no `type` gymnastics, transport inferred
+    from `url`.
+  */
+  const cursor = JSON.parse(
     fs.readFileSync(path.resolve(".cursor-plugin/plugin.json"), "utf8"),
   );
-  if (cursorManifest.mcpServers === undefined) {
-    assert.match(readme, /declares skills\s*\n?\s*only, no `mcpServers`/);
+  assert.equal(cursor.mcpServers?.nullshot?.type, "http");
+  assert.equal(cursor.mcpServers?.nullshot?.url, "https://mcp.nullshot.ai/mcp");
+  // Everything the repo ships that Cursor can load, declared. The manifest
+  // listed skills but not commands, so ten commands shipped unreachable too.
+  assert.equal(cursor.skills, "./plugins/nullshot/skills/");
+  assert.equal(cursor.commands, "./plugins/nullshot/commands/");
+  for (const relative of [cursor.skills, cursor.commands]) {
+    assert.ok(fs.existsSync(path.resolve(relative)), `Cursor manifest points at missing ${relative}`);
   }
+
+  /*
+    Fixed at production on purpose. Cursor's manifest `variables` are values the
+    user is PROMPTED for and have no default, so an unset one would write a
+    literally unexpanded `${...}` into the server URL — a broken server rather
+    than a movable one. Non-production users get the one-click Cursor button in
+    Nullshot's Connect panel, which writes that environment's gateway.
+  */
+  assert.ok(!JSON.stringify(cursor.mcpServers).includes("${"));
+  const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
+  assert.match(readme, /Cursor, Kimi and Gemini are \*\*production-only\*\*/);
+  assert.match(readme, /one-click Cursor button in Nullshot's own Connect panel/);
+  // The README must no longer describe the state that was just fixed.
+  assert.ok(
+    !/declares skills\s*\n?\s*only, no `mcpServers`/.test(readme),
+    "README still says Cursor installs without a gateway",
+  );
 });
 
 test("bootstrap commands are commands the clients actually have", () => {

@@ -2,7 +2,7 @@
   "name": "nullshot",
   "displayName": "Nullshot",
   "description": "Plan and execute Nullshot Jams directly or through deliberate hosted prompts.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Nullshot"
   },
@@ -13,5 +13,12 @@
     "planning",
     "skills"
   ],
-  "skills": "./plugins/nullshot/skills/"
+  "skills": "./plugins/nullshot/skills/",
+  "commands": "./plugins/nullshot/commands/",
+  "mcpServers": {
+    "nullshot": {
+      "type": "http",
+      "url": "https://mcp.nullshot.ai/mcp"
+    }
+  }
 }

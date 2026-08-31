@@ -14,7 +14,7 @@ Paste the command for your client as one line. Clients with terminal OAuth suppo
 | Kimi chat | `/plugins install https://github.com/null-shot/plugin` |
 | Gemini terminal | `gemini extensions install https://github.com/null-shot/plugin --consent` |
 | OpenCode terminal | `curl -fsSL https://raw.githubusercontent.com/null-shot/plugin/main/scripts/install-opencode.sh \| sh` |
-| Pi terminal | `pi install git:github.com/null-shot/plugin@v0.2.0` |
+| Pi terminal | `pi install git:github.com/null-shot/plugin@v0.3.0` |
 
 Codex's bootstrap registers the MCP server and signs in; its plugin bundle,
 which carries the skills, is installed from the `/plugins` browser inside Codex.
@@ -22,16 +22,22 @@ Codex has no documented terminal command for adding a marketplace, so there is
 nothing to paste for that half — the two `codex plugin` commands this table used
 to list are not commands Codex has.
 
-Gemini discovers OAuth automatically when the MCP server first returns
-`401 Unauthorized`.
+Cursor and Gemini discover OAuth automatically when the MCP server first
+returns `401 Unauthorized` — true for Cursor only now that its manifest declares
+a server for one to come from.
 
-Cursor is the one client this plugin does not fully bootstrap. It has no
-documented command for installing a plugin from a repository — installation is
-the dashboard flow above — and `.cursor-plugin/plugin.json` declares skills
-only, no `mcpServers`, so installing it gives Cursor the planning skills and no
-gateway connection. Add the gateway separately as an HTTP MCP server in Cursor's
-`mcp.json`, or use the one-click Cursor button in Nullshot's own Connect panel,
-which writes the environment-correct URL for you. Kimi applies the plugin in a new session; if it reports that authorization is required, run `/mcp-config login plugin-nullshot:nullshot`. Pi exposes the equivalent interactive action as `/mcp-auth nullshot`.
+Cursor installs from a dashboard rather than a command — it documents no slash
+or CLI equivalent — but what it installs is now the whole plugin. The Cursor
+manifest declares the skills, the commands, and an `mcpServers` entry for the
+gateway, which is the shape Cursor's own first-party remote-MCP plugins use and
+which validates against [Cursor's published plugin schema](https://github.com/cursor/plugins/blob/main/schemas/plugin.schema.json).
+It previously declared skills alone, so a Cursor user who completed the flow got
+skills that named tools their editor had no server to call — the least obvious
+way to be broken, because everything looks installed.
+
+That server's URL is fixed at production (see below). On any other environment,
+use the one-click Cursor button in Nullshot's own Connect panel, which writes
+that environment's gateway for you. Kimi applies the plugin in a new session; if it reports that authorization is required, run `/mcp-config login plugin-nullshot:nullshot`. Pi exposes the equivalent interactive action as `/mcp-auth nullshot`.
 
 ## Choosing an environment
 
@@ -61,8 +67,12 @@ which is why `plugins/nullshot/.mcp.json` stays a plain URL — an unexpanded
 `${...}` written into a config file would register a broken server, which is
 worse than one that cannot change environment.
 
-Cursor, Kimi and Gemini are **production-only**. Their manifests are static and
-have no expansion support I could verify.
+Cursor, Kimi and Gemini are **production-only**. Their manifests are static.
+Cursor does support manifest `variables`, but they are values the user is
+prompted for with no default — an unset one would register a literally
+unexpanded `${...}` as the server URL, which is a broken server rather than a
+movable one. Nullshot's Connect panel offers Cursor a one-click install carrying
+the right URL for whichever environment you opened it in, so nothing is lost.
 
 ## Workflow
 

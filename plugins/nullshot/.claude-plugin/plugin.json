@@ -1,7 +1,7 @@
 {
   "name": "nullshot",
   "description": "Cost-aware Nullshot planning, direct execution, and authenticated remote-control MCP tools.",
-  "version": "0.2.0",
+  "version": "0.3.0",
   "author": {
     "name": "Nullshot"
   },

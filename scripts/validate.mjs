@@ -84,6 +84,20 @@ assert.ok(
   "Cursor has no verified default-expansion — its server URL must stay literal",
 );
 
+/*
+  The Pi row pins a git tag, and that pin is how this repo went stale without
+  anyone noticing: `v0.2.0` was cut before the environment-aware URLs, the
+  atomic-claim skills, and both bootstrap-command fixes, so for four releases
+  the README told Pi users to install a plugin missing all of them. The pin
+  cannot verify a tag EXISTS from here, but it can force the pin to move with
+  the version, which turns a silent staleness into a visible release step.
+*/
+const readmeSource = fs.readFileSync(path.join(root, "README.md"), "utf8");
+assert.ok(
+  readmeSource.includes(`pi install git:github.com/null-shot/plugin@v${pkg.version}`),
+  `README pins a Pi tag other than v${pkg.version} — tag the release and update the row together`,
+);
+
 const canonicalMcp = fs.readFileSync(path.join(root, "plugins/nullshot/.mcp.json"), "utf8");
 assert.ok(canonicalMcp.includes(canonicalUrl));
 // Only where expansion is verified. Claude Code documents `${VAR:-default}` in

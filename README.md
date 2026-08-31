@@ -14,7 +14,7 @@ Paste the command for your client as one line. Clients with terminal OAuth suppo
 | Kimi chat | `/plugins install https://github.com/null-shot/plugin` |
 | Gemini terminal | `gemini extensions install https://github.com/null-shot/plugin --consent` |
 | OpenCode terminal | `curl -fsSL https://raw.githubusercontent.com/null-shot/plugin/main/scripts/install-opencode.sh \| sh` |
-| Pi terminal | `pi install git:github.com/null-shot/plugin@v0.2.0` |
+| Pi terminal | `pi install git:github.com/null-shot/plugin@v0.3.0` |
 
 Codex's bootstrap registers the MCP server and signs in; its plugin bundle,
 which carries the skills, is installed from the `/plugins` browser inside Codex.

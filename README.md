@@ -16,11 +16,34 @@ Paste the command for your client as one line. Clients with terminal OAuth suppo
 | OpenCode terminal | `curl -fsSL https://raw.githubusercontent.com/null-shot/plugin/main/scripts/install-opencode.sh \| sh` |
 | Pi terminal | `pi install git:github.com/null-shot/plugin@v0.3.0` |
 
-Codex's bootstrap registers the MCP server and signs in; its plugin bundle,
-which carries the skills, is installed from the `/plugins` browser inside Codex.
-Codex has no documented terminal command for adding a marketplace, so there is
-nothing to paste for that half — the two `codex plugin` commands this table used
-to list are not commands Codex has.
+Codex's bootstrap registers the MCP server and signs in. Its plugin bundle,
+which carries the skills, installs separately — from the `/plugins` browser
+inside Codex, or from the terminal on builds that have `codex plugin`
+(verified on Codex 0.155.1, where `codex plugin --help` lists
+`add`, `list`, `marketplace` and `remove`):
+
+```bash
+codex plugin marketplace add null-shot/plugin
+codex plugin add nullshot@nullshot
+```
+
+Both are idempotent. Earlier releases of this README claimed Codex had no such
+commands; that was true of the build it was written against and is no longer
+true, so the row above stays a single paste while the bundle install is these
+two lines.
+
+Installing the bundle has a side effect worth knowing: it registers a
+`nullshot` MCP server on its own, pointed at **production**, read from the
+bundle's `plugins/nullshot/.mcp.json` — no `codex mcp add` involved. It is also
+not removable with `codex mcp remove nullshot`, which reports no such server
+because the entry never entered `config.toml`.
+
+The bootstrap command in the table is what settles this. An explicit
+`codex mcp add nullshot --url …` writes `[mcp_servers.nullshot]` into
+`config.toml`, and that **takes precedence** over the bundle's entry — after
+running it, `codex mcp get nullshot` reports the URL you chose. So on any
+non-production environment, run the bootstrap **as well as** the bundle
+install, not instead of it. See [Choosing an environment](#choosing-an-environment).
 
 Cursor and Gemini discover OAuth automatically when the MCP server first
 returns `401 Unauthorized` — true for Cursor only now that its manifest declares
@@ -66,6 +89,11 @@ MCP configuration (`openai/codex#2680` and `#7521` are open requests for it),
 which is why `plugins/nullshot/.mcp.json` stays a plain URL — an unexpanded
 `${...}` written into a config file would register a broken server, which is
 worse than one that cannot change environment.
+
+Because that file cannot carry the override, a Codex user who installs only the
+plugin bundle gets the production gateway whatever `NULLSHOT_MCP_URL` says. The
+`codex mcp add` bootstrap is what selects an environment, and its `config.toml`
+entry wins over the bundle's, so run it whenever you are not on production.
 
 Cursor, Kimi and Gemini are **production-only**. Their manifests are static.
 Cursor does support manifest `variables`, but they are values the user is

@@ -150,13 +150,17 @@ test("bootstrap commands are commands the clients actually have", () => {
   /*
     This repo has shipped an invented Codex command before: the table used
     `codex mcp add --transport http`, which is Claude Code's flag and which
-    Codex errors on. It then shipped `codex plugin marketplace add` and
-    `codex plugin add`, neither of which Codex documents — plugin management
-    there is the interactive `/plugins` browser. A pasted command that cannot
-    work is worse than no row at all, because the user blames their setup.
+    Codex errors on. A pasted command that cannot work is worse than no row at
+    all, because the user blames their setup.
 
     `codex mcp add --url` and `codex mcp login` ARE documented, so those are
     what the row uses.
+
+    The row is also held to ONE paste, which is why the bundle install lives in
+    prose below the table rather than in the row. That separation, not the
+    earlier claim that `codex plugin` does not exist, is what this asserts:
+    `codex plugin marketplace add` and `codex plugin add` were re-checked on
+    Codex 0.155.1 and both work, so the README no longer denies them.
   */
   const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
   const codex = readme.split("\n").find((line) => line.startsWith("| Codex terminal |"));
@@ -164,12 +168,16 @@ test("bootstrap commands are commands the clients actually have", () => {
 
   assert.match(codex, /codex mcp add nullshot --url/);
   assert.match(codex, /codex mcp login nullshot/);
-  // `--transport` is Claude Code's flag; Codex rejects it.
+  // `--transport` is Claude Code's flag; Codex rejects it. Still absent from
+  // `codex mcp add --help` on 0.155.1, which offers `--url` instead.
   assert.ok(!codex.includes("--transport"), "Codex has no --transport flag");
-  // Undocumented plugin subcommands.
-  for (const invented of ["codex plugin marketplace", "codex plugin add"]) {
-    assert.ok(!codex.includes(invented), `Codex has no \`${invented}\` command`);
-  }
+  // The bundle install is documented, but not inside the one-paste row.
+  assert.ok(
+    !readme.includes("are not commands Codex has"),
+    "README still denies `codex plugin` subcommands that Codex 0.155.1 has",
+  );
+  assert.match(readme, /codex plugin marketplace add null-shot\/plugin/);
+  assert.match(readme, /codex plugin add nullshot@nullshot/);
 
   // Claude Code's are verified against its own CLI and docs: `plugin
   // marketplace add` takes a GitHub repo, `plugin install` takes
@@ -179,6 +187,26 @@ test("bootstrap commands are commands the clients actually have", () => {
   assert.match(claude, /claude plugin marketplace add null-shot\/plugin/);
   assert.match(claude, /claude plugin install nullshot@nullshot/);
   assert.match(claude, /claude mcp login plugin:nullshot:nullshot/);
+});
+
+test("README states that installing the Codex bundle registers production", () => {
+  /*
+    Measured on Codex 0.155.1 in an isolated CODEX_HOME: `codex plugin add
+    nullshot@nullshot` alone, with `codex mcp add` never run, left `codex mcp
+    list` showing `nullshot https://mcp.nullshot.ai/mcp`, sourced from the
+    bundle's `.mcp.json` in the plugin cache. `codex mcp remove nullshot` then
+    reports no such server, because the entry is not in `config.toml`.
+
+    Running the table's bootstrap afterwards resolves it: the explicit
+    `[mcp_servers.nullshot]` entry takes precedence, and `codex mcp get` reports
+    the chosen URL. A Codex user on a non-production environment therefore needs
+    BOTH steps, which the README has to say, because the failure mode is silent
+    — the agent works, against the wrong environment's data.
+  */
+  const readme = fs.readFileSync(path.resolve("README.md"), "utf8");
+  assert.match(readme, /registers a\n`nullshot` MCP server on its own, pointed at \*\*production\*\*/);
+  assert.match(readme, /takes precedence/);
+  assert.match(readme, /as well as\*\* the bundle\ninstall/);
 });
 
 test("skills drive Spek tasks through atomic claims, not todo writes", () => {
